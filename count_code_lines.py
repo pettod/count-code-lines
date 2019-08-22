@@ -4,6 +4,47 @@ import os
 PROJECT_ROOT = os.getcwd()
 
 
+def countLines(file_names):
+    # Count code lines in all files
+    number_of_lines = []
+    code_lines = 0
+    documentation_lines = 0
+    comment_lines = 0
+    empty_lines = 0
+    for file_name in file_names:
+        with open(file_name) as file:
+            lines = file.readlines()
+            inside_documentation = False
+            for line in lines:
+                line_without_spaces = line.strip()
+                if inside_documentation:
+                    documentation_lines += 1
+                    if line_without_spaces.endswith('"""'):
+                        inside_documentation = False
+                else:
+                    if line_without_spaces == "":
+                        empty_lines += 1
+                    elif line_without_spaces.startswith('#'):
+                        comment_lines += 1
+                    elif line_without_spaces.startswith('"""') and \
+                            line_without_spaces.endswith('"""') and \
+                            len(line_without_spaces) != 3:
+                        documentation_lines += 1
+                    elif line_without_spaces.startswith('"""'):
+                        documentation_lines += 1
+                        inside_documentation = True
+                    else:
+                        code_lines += 1
+        number_of_lines.append(len(open(file_name).readlines()))
+
+    return number_of_lines, {
+        "code_lines": code_lines,
+        "documentation_lines": documentation_lines,
+        "comment_lines": comment_lines,
+        "empty_lines": empty_lines
+    }
+
+
 def filesInDirectory(directory_path=PROJECT_ROOT, check_sub_directories=True,
                      file_format=".py"):
     # Create a list of files and subdirectories in the directory
@@ -29,10 +70,7 @@ def filesInDirectory(directory_path=PROJECT_ROOT, check_sub_directories=True,
 
 
 def printCodeLines(file_names):
-    # Count code lines in all files
-    number_of_lines = []
-    for f in file_names:
-        number_of_lines.append(len(open(f).readlines()))
+    lines_per_file, class_separated_lines = countLines(file_names)
 
     # Print results
     print(
@@ -41,10 +79,15 @@ def printCodeLines(file_names):
         "------|----------")
     for i in range(len(file_names)):
         print(
-            number_of_lines[i], " "*(4 - len(str(number_of_lines[i]))), "|",
+            lines_per_file[i], " "*(4 - len(str(lines_per_file[i]))), "|",
             file_names[i])
     print(
-        "-----------------\n" + str(sum(number_of_lines)) + " altogether\n")
+        "-----------------\n" + str(sum(lines_per_file)) + " altogether")
+    print(
+        "\nCode lines:         ", class_separated_lines["code_lines"],
+        "\nDocumentation lines:", class_separated_lines["documentation_lines"],
+        "\nComment lines:      ", class_separated_lines["comment_lines"],
+        "\nEmpty lines:        ", class_separated_lines["empty_lines"])
 
 
 def main():
